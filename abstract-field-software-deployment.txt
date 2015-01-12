@@ -1,0 +1,26 @@
+
+Title: Software Deployment in the Field (Technical Debt and Data-Ops)
+
+Abstract:
+
+In the Earth Observing Laboratory at NCAR, we develop and deploy many
+different instruments, for platforms ranging from miniature sondes to
+radars and aircraft, to areas all over the world to observe all kinds of
+phenomena.  Every field deployment is in fact a custom and very complicated
+configuration of systems, software, instruments, and data streams.  Besides
+the stories about writing software in some interesting situations, field
+projects present some (exciting) challenges for software engineering.  The
+concept of technical debt gives an interesting perspective on these
+challenges and on the costs incurred while under the pressure of a field
+deployment.  Some ideas from dev-ops can be borrowed to help deal with
+these costs and to optimize data collection in general, in that the more
+automated we can make system deployment, data collection, and data
+processing in the field, the more we can mitigate the costs of manual
+customization, intervention, and "real-time development".
+
+This talk will present a few approaches to dev-ops and "data-ops" for field
+deployments, and frame some questions about how to know which approaches to
+use when.  In particular, the talk will describe a python package used for
+managing streams of data files for the Integrated Sounding System, and the
+ways this package has evolved to test a data-ops idea of continuous data
+processing, similar to continuous integration and release for software.
