@@ -13,554 +13,261 @@ http://12factor.net/
 
 Preface:
 
-Nothing in this talk has been approved by EOL.  I am not speaking for any
-other EOL software engineers, I am speaking merely from my own experience
-and perspective.
+[[Nothing in this talk has been approved by EOL.  I am not speaking for any other EOL software engineers, I am speaking merely from my own experience and perspective.]]
 
-I want this to be like a retrospective and show-n-tell that leads up to
-what I think are some useful insights about software engineering for field
-projects.
+I want this to be like a retrospective and show-n-tell that leads up to my own personal perspective and insights about software engineering for field projects.
+
+I will focus specifically on software engineering challenges and solutions for field project deployments, and I hope that will interesting to you, but I also suspect that most of it will have familiar parallels in your own developments.
 
 
 Questions:
 
-Do I introduce the iss catalog tool early on, and then refer to it when it
-is relevant?  I think so.  So introduce it in the "principles and
-applications" section, since it is sort of the prototype for testing some
-of the general concepts, and then refer back to it for automated
-datastream-specific tests, consolidated configuration, metadata-based file
-management, and continuous processing.
+Do I introduce the iss catalog tool early on, and then refer to it when it is relevant?  I think so.  So introduce it in the "principles and applications" section, since it is sort of the prototype for testing some of the general concepts, and then refer back to it for automated datastream-specific tests, consolidated configuration, metadata-based file management, and continuous processing.
 
 
 
-I. Stories from the Field (or, one of my biggest mistakes as a young
-programmer)
+I. Stories from the Field (or, one of my biggest mistakes as a young programmer)
+
+
+When people ask me about my job at NCAR, I tell them I'm a programmer, and I develop and deploy software for weather instruments, and I enjoy getting out from behind my desk...
+
 
 A. Story of Zebra at TOGA-COARE
 
 [[Need photos of TOGA-COARE ops center]]
 
-Before Jon Corbet became a Linux kernel developer and editor of
-LWN, he developed Zebra...
+Before Jon Corbet became a Linux kernel developer and editor of LWN, he developed Zebra...
 
 [[Have photo of Jon]]
 
- - Visual integration of a variety of kinds of instrument data, and
-   configuration for a set of typical visualizations, for both real-time
-   and post-project, because every field project was different.
+ - Visual integration of a variety of kinds of instrument data, and configuration for a set of typical visualizations, for both real-time and post-project, because every field project was different.
 
- - excitement of field developments, meeting scientists' needs in
-   real-time, instant gratification
+ - excitement of field developments, meeting scientists' needs in real-time, instant gratification
 
  - immediate problems and the challenge of extra time pressure
+
+I went for the quick and what-I-thought-was-obvious solution, left the next programmer coming after me to handle the fallout.
+
 
 Other field stories:
 
 C130 SABL, building and deploying vxworks while flying over the Great Lakes.
 
-P3 circling OKC at low altitude, feeling sick and trying to test and debug
-software.
+P3 circling OKC at low altitude, feeling sick and trying to test and debug software.
 
-ISS talking to a modem across a lake in a ranger office via a wireless
-serial link.
+ISS talking to a modem across a lake in a ranger office via a wireless serial link.
 
 VORTEX driving through the plains
 
-CLIMODE: sitting at a computer and my chair sliding backwards away from the
-computer when the ship rolled.
+CLIMODE: sitting at a computer and my chair sliding backwards away from the computer when the ship rolled.
 
 Sitting inside seatainers and even U-haul trailers.
 
 
-...Clearly the less development and configuration that must be done in the
-field the better...
+Introduce ISS
+
+ - need an example of what I'm talking about, a highly configurable instrument network and system of software that must be deployed in all kinds of environments
 
 
-So recently I've been looking at software engineering for field projects in
-terms of technical debt.
+...Clearly the less development and configuration that must be done in the field the better...
+
+
+So recently I've been looking at software engineering for field projects in terms of technical debt.
 
 
 B. What is "technical debt"?
 
-It turns out that right around that time, Ward Cunningham contributed an
-experience report to the 1992 OOPSLA conference about the development of
-some financial software, and the report describes a debt metaphor for
-software development.
+It turns out that right around that time, Ward Cunningham contributed an experience report to the 1992 OOPSLA conference about the development of some financial software, and the report describes a debt metaphor for software development.
 
-"Shipping first time code is like going into debt. A little debt speeds
-development so long as it is paid back promptly with a rewrite. Objects make
-the cost of this transaction tolerable. The danger occurs when the debt is
-not repaid. Every minute spent on not-quite-right code counts as interest on
-that debt. Entire engineering organizations can be brought to a stand-still
-under the debt load of an unconsolidated implementation, object- oriented or
-otherwise."
+"Shipping first time code is like going into debt. A little debt speeds development so long as it is paid back promptly with a rewrite. Objects make the cost of this transaction tolerable. The danger occurs when the debt is not repaid. Every minute spent on not-quite-right code counts as interest on that debt. Entire engineering organizations can be brought to a stand-still under the debt load of an unconsolidated implementation, object- oriented or otherwise."
 
-This came to be known as technical debt.
+This metaphor came to be known as technical debt.
 
+The idea has evolved and many people have expanded on it, and so Ward has since tried to clarify the metaphor as he intended it.  His technical debt metaphor is not about what happens when you write bad code.  From his perspective, even if you always write good code, you still take on debt because that code will need to be refactored in the future as your understanding of the problem evolves and expands.
 
-The idea has evolved and many people have expanded on it, sometimes in ways
-Ward hadn't intended.
+From the perspective of field deployments, I'll also add that the code also needs to be maintained, configured, and deployed, for each and every successive field deployment.  In other words, writing the code is never the end, writing code always implies taking on debt.
 
-Ward has since tried to clarify the metaphor.  His technical debt metaphor
-is not about what happens when you write bad code.  From his perspective,
-even if you always write good code, you still take on debt because that
-code will likely need to be refactored in the future as your understanding
-of the problem evolves.  
+The kind of debt that Ward describes is not necessarily bad debt.  And in fact you can read lots of articles justifying cases where you should take on debt.  Martin Fowler gives the example of choosing between two solutions to a problem, call them the quick-and-dirty solution and the slow-and-clean solution.  If you really need a quick solution, then you choose quick-and-dirty, but you accept a larger amount of technical debt, accepting that someday you'll have to refactor the dirty code into something cleaner.
 
-From the perspective of field deployments, I'll also add that that code
-also needs to be maintained, configured, and deployed.  In other words,
-writing the code is never the end, the act of writing code is always like
-taking on debt.
+Technical debt is what we have when we borrow against our future development time.  And like any debt, it involves risk.  What happens if take on the debt of a quick-and-dirty solution and then later on cannot pay it off?  Then we have a development crisis, the thing that Ward mentions can bring an engineering organization to a stand-still.  It should sound like the mortgage lending crisis.  When we underestimate the risk of our debt, and then it can't be paid off, we're stuck holding software whose value has suddenly dropped.  Maybe we can't compile it on a new platform or refactor it to find and fix a new bug, but either way it becomes less valuable and more costly to deploy.
 
-This kind of debt that Ward describes is not necessarily bad debt.  And in
-fact you can read lots of articles justifying cases where you should take
-on debt.  Martin Fowler gives the example of choosing between two solutions
-to a problem, I'll call them the quick-and-dirty solution and the
-slow-and-clean solution.  If you really need a quick solution, then you
-choose quick-and-dirty, but you accept a larger amount of technical debt,
-accepting that someday you'll have to refactor the dirty code into
-something cleaner.
+[[There are good reasons businesses take on debt, and likewise there can be good reasons developers take on technical debt.
 
-There are good reasons businesses take on debt, and likewise there can be
-good reasons developers take on technical debt.
+Any debt carries with it risk.  We might be very aware of our technical debt, and we might make conscious, deliberate, rational choices to accept debt, but we risk not being able to pay it back.  It is impossible to know for certain how much work it will take to refactor code later on, or to turn that quick-and-dirty code into clean code later, or to consolidate code that has been almost-but-not-quite duplicated into a dozen places by copy-and-paste.  When we can't deliver on refactoring or maintaining our code, then the interest just builds and we spend more and more time "paying the interest"--fixing bugs and re-learning the code--and less time on actual feature development.
 
-Any debt carries with it risk.  We might be very aware of our technical
-debt, and making conscious, deliberate, rational choices to accept debt,
-but we risk not being able to pay it back.  It is impossible to know for
-certain how much work it will take to refactor code later on, or to turn
-that quick-and-dirty code into clean code later, or to consolidate code
-that has been almost-but-not-quite duplicated into a dozen places by
-copy-and-paste.  And when we can't deliver on refactoring or maintaining
-our code, then the interest just builds and we spend more and more time
-"paying the interest"--fixing bugs and re-learning the code--and less time
-on actual feature development.
+Some risk is out of our control.  When we choose a particular technology or library for an implementation, we accept the risk that those might become obsolete, or unavailable for our target platform.  We take on risk for the time it saves us now, but we have to understand that the debt may come due at any time, and we'll owe lots of work to switch to a new implementation.]]
 
-Some risk is out of our control.  When we choose a particular technology or
-library for an implementation, we accept the risk that those might become
-obsolete, or unavailable for our target platform.  We take on risk for the
-time it saves us now, but we have to understand that the debt may come due
-at any time, and we'll owe lots of work to switch to a new implementation.
-
-So I find the quick-and-dirty versus slow-and-clean dilemma to be
-especially relevant to field projects, but there are several pressures I'd
-like to mention which push us to take on debt.  And naturally all
-programmers have probably experienced analogous pressures in their
-developments.
+So I find the quick-and-dirty versus slow-and-clean dilemma to be especially relevant to field projects, but there are several pressures I'd like to mention which push us to take on debt.  And naturally all programmers have probably experienced analogous pressures in their developments.
 
 
 C. Pressures in the field (or, reasons we take on debt)
 
-Pressure to make the most of an expensive deployment: you send equipment,
-instruments, and people half way around the world for 1-2 months ("some
-limited window, and within that window to study some limited number of
-occurrences of whatever phenomenon you're there to observe") to observe a
-specific phenomenon -- you do everything you can to get it right, and by
-definition it's a very customized configuration and integration --
-configuration and integration happens where else? in the software.
+A field deployment is driven by the observations the scientists need to make with the instruments they can deploy.  So every deployment requires custom configuration and integration, and most of that configuration and integration happen--where else?--in the software.
 
-and let's be honest, it's much more fun for me to make changes in the field
-because that's where I see immediate gratification.  I deploy a change and
-I get to see it in action right away, it immediately starts helping people,
-sometimes myself included.  If I have to put the change on a task list, or
-make it on a branch for release on a future project, that's just
-un-exciting and un-fun.  Never mind that some changes may only be useful
-for that particular project, so what's the point to putting it off?
+Here are some of the pressures we have to take on technical debt:
 
-technical debt is also incurred for data: record as much as possible now,
-add measurements in the field with as many instruments as you can field and
-fund, with the intention of later on, after the project, dealing with the
-format changes and extra research and processing that will be required to
-reconcile and finally publish those data.  (which brings about a question:
-what if the framework for all the custom processing had to be established
-ahead of time, so that we had to prove we could reconcile the observational
-data and get the quality control we advertise, so that during the project we
-could generate best-quality data in real-time, excepting of course for the
-calibrations and sanity checks and fixes for unforeseeable problems which
-must still happen post-project?  And by best-quality, I mean if all efforts
-for a project ceased, then we could publish immediately the processed data,
-since it's the best we knew how to get at that time.)
+1. Once-in-a-Lifetime Opportunity
 
-I suspect modelers have similar pressures -- when it takes days to run an
-experiment to study model behavior or produce results for a particular
-scenario -- maybe there's a tendency to push all the latest changes in
-rather than wait for the next run?  A modeler would have to answer that, I'm
-just pointing out that the pressures might be similar to a field project,
-any endeavor where we want to capitalize on a limited window with expensive
-resources.
+...or Capitalize on an expensive deployment, or since we're already going to be there, or incremental cost, or mission creep
+
+Pressure to make the most of an expensive deployment: you send equipment, instruments, and people half way around the world for 1-2 months ("some limited window, and within that window to study some limited number of occurrences of whatever phenomenon you're there to observe") to observe a specific phenomenon -- you do everything you can to get it right.  You may never get another chance to have all these instruments in this place at this time.
 
 
-D. system administration in the field, more technical debt
+2. Testing Opportunity
 
- - applies to system adminstration as well as software: making that system
-   tweak to support new services and capabilities in the field: firewall
-   and routing configurations, configurations for printers and other
-   hardware accessories, third-party software installations, desktop
-   configurations, user accounts.  Example scenario: scientist or operator
-   comes to you in the middle of a field project and says we want to ftp
-   the data as they are recorded to this other scientist in real time.  The
-   software developer / problem solver in us kicks into gear: I can write a
-   script for that, install it in cron, hard-code the network addresses and
-   directories, and solve the problem.
+Often there are new software capabilities that are just much more convenient to test during a field project.  Sometimes the software was written specifically for that field project and that combination of instruments and data, so that's when the code gets really tested.  The field project is our integration test.  Therefore fixes have to happen in the field, and the time crunch can dictate the kind of fixes we can make.
+
+SABL example:
+
+
+3. User Opportunity
+
+Obviously the field deployment is usually the first time all the instruments and all the data are online together recording real observations, so of course that's when the scientists and investigators start to learn how well the deployment is working.
+
+It's hard to know for certain ahead of time what products, metrics, delivery rates, or special datasets will help the real-time planning.  I can't tell you how many times we get requests in the field to script the delivery of some data product, because someone realized that it was available or that it would help them evaluate their own instrument or model.
+
+LANTEX and the fortran sounding input example?
+
+
+4. Thrill and excitement
+
+[You know you're a prgrammer when you can think thrill and excitement about software.]
+
+I'll be honest, it's much more exciting for me to make changes in the field, because that's challenging and that's where I see immediate gratification.  I deploy a change and I get to see it in action right away, it immediately starts helping people.  If I have to put the change on a task list, or make it on a branch for release on a future project, that's just un-exciting and un-fun.  Never mind that some changes may only be useful for that particular project, so what's the point to putting it off?
+
+
+
+D. Technical Debt for Data
+
+technical debt is also incurred for data: record as much as possible now, add measurements in the field with as many instruments as you can field and fund, with the intention of later on, after the project, dealing with the format changes and extra research and processing that will be required to reconcile and finally publish those data.  (which brings about a question: what if the framework for all the custom processing had to be established ahead of time, so that we had to prove we could reconcile the observational data and get the quality control we advertise, so that during the project we could generate best-quality data in real-time, excepting of course for the calibrations and sanity checks and fixes for unforeseeable problems which must still happen post-project?  And by best-quality, I mean if all efforts for a project ceased, then we could publish immediately the processed data, since it's the best we knew how to get at that time.)
+
+I suspect modelers have similar pressures -- when it takes days to run an experiment to study model behavior or produce results for a particular scenario -- maybe there's a tendency to push all the latest changes in rather than wait for the next run?  A modeler would have to answer that, I'm just pointing out that the pressures might be similar to a field project, and to any endeavor where we want to capitalize on a limited window with expensive resources.
+
+
+E. system administration in the field, more technical debt
+
+ - applies to system adminstration as well as software: making that system tweak to support new services and capabilities in the field: firewall and routing configurations, configurations for printers and other hardware accessories, third-party software installations, desktop configurations, user accounts.  Example scenario: scientist or operator comes to you in the middle of a field project and says we want to ftp the data as they are recorded to this other scientist in real time.  The software developer / problem solver in us kicks into gear: I can write a script for that, install it in cron, hard-code the network addresses and directories, and solve the problem.
 
 
 II. Myths and challenges
 
- - there is not enough time for normal software development practices: no
-   time to write tests, or track changes, or write documentation, or
-   log issues in an issue tracker
+ - there is not enough time for normal software development practices: no time to write tests, or track changes, or write documentation, or log issues in an issue tracker
 
- - I call these myths deliberately.  They are a form of technical debt,
-   deploy the expedient fix now and put off all the checks until later.
-   It means adopting a feature now and assuming it can be supported
-   for all future field deployments.
+ - I call these myths deliberately.  They are a form of technical debt, deploy the expedient fix now and put off all the checks until later.  It means adopting a feature now and assuming it can be supported for all future field deployments.
 
- - The features are not just software features: it includes all the system
-   features accumulated from all the field projects up to now.
+ - The features are not just software features: it includes all the system features accumulated from all the field projects up to now.
 
- - Users (and developers also) expect to use those features again.  They
-   have a long memory.  Also, it is very likely a different user will come
-   up with the same need but with a slightly different deployment
-   configuration.
+ - Users (and developers also) expect to use those features again.  They have a long memory.  Also, it is very likely a different user will come up with the same need but with a slightly different deployment configuration.
 
 
 III. Technical debt in the field is real
 
- - EOL has forever had debates and discussions about how well and even
-   whether we can say no to certain requests.  It is hard to define all the
-   software and system requirements (the "softer" side of field
-   deployments) well in advance.  Further, it is often the soft side which
-   must accommodate problems in the hard side: changes or additions to
-   instruments, equipment failures or re-purposing.
+ - EOL has forever had debates and discussions about how well and even whether we can say no to certain requests.  It is hard to define all the software and system requirements (the "softer" side of field deployments) well in advance.  Further, it is often the soft side which must accommodate problems in the hard side: changes or additions to instruments, equipment failures or re-purposing.
 
- - The upshot is that we will owe over the long run for every feature we
-   have ever offerred for a field deployment, because we won't ever start
-   suddenly saying no where we've said yes every time before.  And really
-   and truly we don't want to do that either, at least I don't.  I don't
-   get excited about software development by telling my users no, I can't
-   make that work for you.
+ - The upshot is that we will owe over the long run for every feature we have ever offerred for a field deployment, because we won't ever start suddenly saying no where we've said yes every time before.  And really and truly we don't want to do that either, at least I don't.  I don't get excited about software development by telling my users no, I can't make that work for you.
 
- - So the question is how to recognize when we're taking on debt?  Can we
-   quantify and minimize the risk, can we compromise and include good
-   software development practices in the field?  Maybe the reason we take
-   shortcuts in the field is not really time, maybe it's inconvenient
-   tools, poor Internet access, culture.
+ - So the question is how to recognize when we're taking on debt?  Can we quantify and minimize the risk, can we compromise and include good software development practices in the field?  Maybe the reason we take shortcuts in the field is not really time, maybe it's inconvenient tools, poor Internet access, culture.
 
-In EOL we talk about putting out fires instead of cultivating the forest,
-and probably that happens sometimes for all of us.  So think about the last
-fire you had to put out: was that fire a result of a decision made much
-earlier for the sake of expedience at the time?  We (software engineers)
-tend not to make that connection I think.  We see each problem as a new
-problem needing a new solution -- and maybe we should look back and check
-if what we are really doing is paying interest on a debt from an old
-solution.
+In EOL we talk about putting out fires instead of cultivating the forest, and probably that happens sometimes for all of us.  So think about the last fire you had to put out: was that fire a result of a decision made much earlier for the sake of expedience at the time?  We (software engineers) tend not to make that connection I think.  We see each problem as a new problem needing a new solution -- and maybe we should look back and check if what we are really doing is paying interest on a debt from an old solution.
 
-Freedom requires discipline.  Lots of tools and environments out there --
-field work is very distributed and spread out.  Sometimes you find yourself
-in the passenger seat of a truck, driving all day from Kansas to Texas, and
-debugging python code for sending sounding data in real-time over cellular
-Internet connections.  It can be hard to follow a strict software
-development process while logged into an embedded Linux computer floating
-more than 60,000 feet over the antarctic.  Process may even get in the way.
-But that means we need discipline to be aware of the techincal debt we're
-taking on.  And we need to be prudent about it: either pay it down quickly
-before the interest accumulates, or accept that we'll have to pay more
-later.  Maybe we just made a change to some software in the field, and it
-seems to fix a problem, so we're happy and we move on the next problem.
-Weeks later, perhaps in the same field project or on a different one, are we
-going to remember whether we still need that change, why we made it, what it
-was supposed to fix?  Maybe it's the sort of problem that we should document
-in an issue tracker up front, rather than take on the debt of potentially
-having to solve the problem again.
+Freedom requires discipline.  Lots of tools and environments out there -- field work is very distributed and spread out.  Sometimes you find yourself in the passenger seat of a truck, driving all day from Kansas to Texas, and debugging python code for sending sounding data in real-time over cellular Internet connections.  It can be hard to follow a strict software development process while logged into an embedded Linux computer floating more than 60,000 feet over the antarctic.  Process may even get in the way.  But that means we need discipline to be aware of the techincal debt we're taking on.  And we need to be prudent about it: either pay it down quickly before the interest accumulates, or accept that we'll have to pay more later.  Maybe we just made a change to some software in the field, and it seems to fix a problem, so we're happy and we move on the next problem.  Weeks later, perhaps in the same field project or on a different one, are we going to remember whether we still need that change, why we made it, what it was supposed to fix?  Maybe it's the sort of problem that we should document in an issue tracker up front, rather than take on the debt of potentially having to solve the problem again.
 
 
-When EOL takes inventory of its software, nominally to identify a plan for
-the software which is aging or outdated and needs maintenance before
-support becomes critical, it's a little like assessing our technical debt.
-From a certain perspective, the reason we have software at risk of becoming
-un-deployable (in other words, software which we as developers deplore
-deploying) is because somewhere along the way we decided to put off
-maintaining something.  We made a choice -- maybe it was "forced" by field
-deployments and lack of time, but we still need to recognize that we took
-on debt intending to pay it off later, perhaps without quite appreciating
-how much interest there would be.
+When EOL takes inventory of its software, nominally to identify a plan for the software which is aging or outdated and needs maintenance before support becomes critical, it's a little like assessing our technical debt.  From a certain perspective, the reason we have software at risk of becoming un-deployable (in other words, software which we as developers deplore deploying) is because somewhere along the way we decided to put off maintaining something.  We made a choice -- maybe it was "forced" by field deployments and lack of time, but we still need to recognize that we took on debt intending to pay it off later, perhaps without quite appreciating how much interest there would be.
 
-Important to distinguish debt from risk -- choosing an implementation
-language or 3rd party library naturally incurs risk, but not necessarily
-debt.  Choosing to keep implementing in Python 2 when you know someday you
-will need to port to Python 3 -- that's debt.  Debt is not necessarily good
-or bad, but we should recognize the debt that we're intending to pay back,
-sometimes unconsciously I think.
+Important to distinguish debt from risk -- choosing an implementation language or 3rd party library naturally incurs risk, but not necessarily debt.  Choosing to keep implementing in Python 2 when you know someday you will need to port to Python 3 -- that's debt.  Debt is not necessarily good or bad, but we should recognize the debt that we're intending to pay back, sometimes unconsciously I think.
 
 debt examples:
 
-choosing not to write tests or to automate tests, in other words intending
-to spend time running and evaluating tests manually or to fix whatever bugs
-come up from not testing, especially if they turn up during a field project
+choosing not to write tests or to automate tests, in other words intending to spend time running and evaluating tests manually or to fix whatever bugs come up from not testing, especially if they turn up during a field project
 
 choosing not to automate system deployment
 
 How would I assess EOL's technical debt?  especially for field deployments?
 
-choosing not to automate backups and backup recovery, unless you have a
-policy of not recovering from system failures in the field ==> this is a
-situation where we must weigh risk versus debt.  Maybe we think the risk of
-a system failure is acceptable.  But what we absolutely shouldn't do is
-assume that we can recover from a failure in a day's time by rebuilding a
-system manually.  By not developing and testing the backup and recovery
-process, we are accepting the debt of debugging that process in the field in
-a high-pressure situation.
+choosing not to automate backups and backup recovery, unless you have a policy of not recovering from system failures in the field ==> this is a situation where we must weigh risk versus debt.  Maybe we think the risk of a system failure is acceptable.  But what we absolutely shouldn't do is assume that we can recover from a failure in a day's time by rebuilding a system manually.  By not developing and testing the backup and recovery process, we are accepting the debt of debugging that process in the field in a high-pressure situation.
 
 
 
 IV. Principles for software and system deployment in the field
 
- - these borrow from agile software development practices and from devops
-   ideas.
+(or, ways to reduce your debt)
+
+Let the software do as much of the customization and configuration work as possible.
+
+ - these borrow from agile software development practices and from devops ideas.
 
 ...
 
 A. applying devops to the field
 
 
-A software tool is not finished when it works, it is finished when it is
-deployable.  So it is not enough to compile the program and verify that it
-does what is needed, it must be automatically and consistently deployable
-(and even updatable), without requiring repeated manual configuration.
+A software tool is not finished when it works, it is finished when it is deployable.  So it is not enough to compile the program and verify that it does what is needed, it must be automatically and consistently deployable (and even updatable), without requiring repeated manual configuration.
 
-Deployment testing.  So how do we know when a software system has been
-deployed successfully?  We should be able to run its unit tests
-successfully on the target system, meaning unit tests should be deployed
-with the software.  But we may need other tests like checking that all
-external system dependencies exist on the system, like outside tools or
-libraries, and that those tools work, and a sane configuration exists.  As
-an example, some of the ISS data processing depends on IDL, and so the ISS
-system configuration script makes sure IDL is installed.  (It should also
-make sure IDL has a license, but I haven't done that yet.)  The
-Twelve-Factor App suggests not relying on any system dependencies, rolling
-all external tools into the deployment system.  In practice, I get around
-that on linux by declaring which RPMs and external software I need and
-automatically installing those when configuring a system.  Either way, it's
-worth adding some automatic mechanisms to confirm a deployment.  If you run
-something manually to make sure an install worked, then script it instead.
+Deployment testing.  So how do we know when a software system has been deployed successfully?  We should be able to run its unit tests successfully on the target system, meaning unit tests should be deployed with the software.  But we may need other tests like checking that all external system dependencies exist on the system, like outside tools or libraries, and that those tools work, and a sane configuration exists.  As an example, some of the ISS data processing depends on IDL, and so the ISS system configuration script makes sure IDL is installed.  (It should also make sure IDL has a license, but I haven't done that yet.)  The Twelve-Factor App suggests not relying on any system dependencies, rolling all external tools into the deployment system.  In practice, I get around that on linux by declaring which RPMs and external software I need and automatically installing those when configuring a system.  Either way, it's worth adding some automatic mechanisms to confirm a deployment.  If you run something manually to make sure an install worked, then script it instead.
 
-Consolidate configuration and make it deployable.  Field software should
-differ as little as possible across deployments, and instead customizations
-should be realized with configuration parameters.  This does not
-necessarily imply one single configuration file, although that might make
-configuration management a little easier, but it does mean configuration
-files should easy to locate and customize.  Essentially this means
-associating configurations with the field project rather than spreading it
-out across the software.  Some settings need to be consistent across the
-deployed software, some might be specific to one program but change across
-projects.  The goal is to deploy a single and consistent configuration
-across the range of software tools used in a field project, rather than
-deploying separate configurations for each tool.  The configuration
-includes metadata and context information also, like the name of the
-project, host names, site names, and so on.  Ideally such metadata are set
-in one place and one place only, since that way it cannot get out of sync.
+Consolidate configuration and make it deployable.  Field software should differ as little as possible across deployments, and instead customizations should be realized with configuration parameters.  This does not necessarily imply one single configuration file, although that might make configuration management a little easier, but it does mean configuration files should easy to locate and customize.  Essentially this means associating configurations with the field project rather than spreading it out across the software.  Some settings need to be consistent across the deployed software, some might be specific to one program but change across projects.  The goal is to deploy a single and consistent configuration across the range of software tools used in a field project, rather than deploying separate configurations for each tool.  The configuration includes metadata and context information also, like the name of the project, host names, site names, and so on.  Ideally such metadata are set in one place and one place only, since that way it cannot get out of sync.
 
-This should sound like the DRY principle: Don't Repeat Yourself, or the
-practice of avoiding redundant data in database designs.  If different
-parts of the system or software all need to know the name of the current
-field project, then they should all get it from the same place.
+This should sound like the DRY principle: Don't Repeat Yourself, or the practice of avoiding redundant data in database designs.  If different parts of the system or software all need to know the name of the current field project, then they should all get it from the same place.
 
-On the ISS, the configuration is stored in a text file in JSON format, and
-a python script can be used to set and query the parameters in that file.
-Both python code and bash scripts get their configuration settings from one
-project- and site-specific place.
+On the ISS, the configuration is stored in a text file in JSON format, and a python script can be used to set and query the parameters in that file.  Both python code and bash scripts get their configuration settings from one project- and site-specific place.
 
-As far as configuration being deployable, this means it should be easy to
-keep the configuration consistent across sites and systems, not just on one
-system.  For the ISS, the configuration is under revision control.  When a
-project configuration changes, the changes can be pulled at a site with a
-subversion update.  One advantage to storing configuration settings in text
-formats like JSON or XML is that it is easy to manage changes and see
-differences in revision control systems.  The aircraft software has
-recently been moving more metadata and configuration files into XML for
-this reason.  And yes, I'm talking about system administration settings as
-well as software and metadata configuration.  When we deploy a network
-server, it always has custom iptables rules and DHCP and custom user
-accounts.  Those are part of the configuration that should be deployable
-(and verifiable) automatically.
+As far as configuration being deployable, this means it should be easy to keep the configuration consistent across sites and systems, not just on one system.  For the ISS, the configuration is under revision control.  When a project configuration changes, the changes can be pulled at a site with a subversion update.  One advantage to storing configuration settings in text formats like JSON or XML is that it is easy to manage changes and see differences in revision control systems.  The aircraft software has recently been moving more metadata and configuration files into XML for this reason.  And yes, I'm talking about system administration settings as well as software and metadata configuration.  When we deploy a network server, it always has custom iptables rules and DHCP and custom user accounts.  Those are part of the configuration that should be deployable (and verifiable) automatically.
 
-I have one amusing story about configuration, an example of configuration
-not being sufficiently separate from software, and I mean no offense to
-anyone who may have ever approached software configuration this way. I was
-in Hong Kong for the LANTEX field project, and besides the instruments we'd
-deployed to measure the winds around the future site of the new Hong Kong
-airport, one scientist was running a simple model, written in FORTRAN,
-which required sounding data to initialize it.  It turned out that the only
-way to input the sounding was to convert to FORTRAN source code and compile
-it into the model.  So I ended sitting in the ops center at the Hong Kong
-University of Science and Technology writing a C program to convert
-sounding data in CLASS format into a FORTRAN common block.
+I have one amusing story about configuration, an example of configuration not being sufficiently separate from software, and I mean no offense to anyone who may have ever approached software configuration this way. I was in Hong Kong for the LANTEX field project, and besides the instruments we'd deployed to measure the winds around the future site of the new Hong Kong airport, one scientist was running a simple model, written in FORTRAN, which required sounding data to initialize it.  It turned out that the only way to input the sounding was to convert to FORTRAN source code and compile it into the model.  So I ended sitting in the ops center at the Hong Kong University of Science and Technology writing a C program to convert sounding data in CLASS format into a FORTRAN common block.
 
-You might think that it is unnecessary to keep configuration in revision
-control if it's for a one-time project and it will only be used on a single
-server, but I disagree.  When configuration is in revision control, I can
-see a log of what's changed on the server and when.  I can investigate the
-current settings even when I'm away from the site or the site is
-inaccessible, ie, the Internet link is down or the site is powered down. I
-can also deploy that same configuration to a test server and investigate a
-problem without having to change the production system.
+You might think that it is unnecessary to keep configuration in revision control if it's for a one-time project and it will only be used on a single server, but I disagree.  When configuration is in revision control, I can see a log of what's changed on the server and when.  I can investigate the current settings even when I'm away from the site or the site is inaccessible, ie, the Internet link is down or the site is powered down. I can also deploy that same configuration to a test server and investigate a problem without having to change the production system.
 
 Overlooked configuration source:
 
 Crontab files:
 
-If software depends on an entry in crontab, then that is part of its
-configuration and it should install and manage those entries itself, as
-part of realizing its configuration.  It should not be done manually.
+If software depends on an entry in crontab, then that is part of its configuration and it should install and manage those entries itself, as part of realizing its configuration.  It should not be done manually.
 
 BIOS settings:
 
-When we deployed a PC to Greeley for a 3-month project over the winter, I
-forgot to set the AC recovery option so the PC would turn back on after a
-power loss.  Needless to say I was not happy with myself when the site had
-a power outage and the PC did not recover.  I think my coworker that drove
-out there to push the power button was even less happy with me.  Since then
-I've looked for ways to automatically confirm the BIOS setting when
-configuring a system.
+When we deployed a PC to Greeley for a 3-month project over the winter, I forgot to set the AC recovery option so the PC would turn back on after a power loss.  Needless to say I was not happy with myself when the site had a power outage and the PC did not recover.  I think my coworker that drove out there to push the power button was even less happy with me.  Since then I've looked for ways to automatically confirm the BIOS setting when configuring a system.
 
 Router configs:
 
-Download and commit the router configurations.  As soon as the network
-appears to be down and the site cannot be reached, you start wondering what
-settings you left on the router, and how quickly you could restore the
-configuration if you had to replace it with a new one bought off the shelf
-at Walmart.
+Download and commit the router configurations.  As soon as the network appears to be down and the site cannot be reached, you start wondering what settings you left on the router, and how quickly you could restore the configuration if you had to replace it with a new one bought off the shelf at Walmart.
 
-Testing should consider hardware.  I think in EOL we are making progress
-towards testing our software with real data.  While unit testing might use
-small tests with a few artificial values, it's also valuable to be able to
-test an entire software suite on real data and verify that it still results
-in the same dataset.  Further, software is often the most valuable means of
-testing hardware in the field.  To me the ideal (gold standard, gold ring,
-...?)  is an end-to-end test: inject a known signal as early into the
-instrument as possible and let the software verify that it comes out as
-expected.  Of course this can be expanded ad infinitum with all kinds of
-diagnostics, so obviously we should work towards the most valuable
-diagnostics first.
+Testing should consider hardware.  I think in EOL we are making progress towards testing our software with real data.  While unit testing might use small tests with a few artificial values, it's also valuable to be able to test an entire software suite on real data and verify that it still results in the same dataset.  Further, software is often the most valuable means of testing hardware in the field.  To me the ideal (gold standard, gold ring, ...?)  is an end-to-end test: inject a known signal as early into the instrument as possible and let the software verify that it comes out as expected.  Of course this can be expanded ad infinitum with all kinds of diagnostics, so obviously we should work towards the most valuable diagnostics first.
 
-Automate failure detection.  It used to be that scientists, technicians,
-and software engineers were constantly checking on the data during a field
-campaign.  The software engineers had to make sure it was always streaming
-and recording and plotting, so that scientists and techs could make sure it
-looked ok.  Now more and more of our systems take advantage of nagios and
-other monitoring, so a software engineer gets an email or text message when
-a nagios check fails.  I believe that's been a big advancement, and like
-hardware diagnostics, it requires knowing what checks are the most useful
-to implement.  And once you've coded up the detection of a problem, you can
-use it all the time, everywhere it makes sense.  Data checks can be
-valuable both in real-time and after the project.  A threshold test is
-useful in real-time to detect a problem as it happens, and it is also
-useful on the final dataset to identify the exact time periods of
-questionable data.
+Automate failure detection.  It used to be that scientists, technicians, and software engineers were constantly checking on the data during a field campaign.  The software engineers had to make sure it was always streaming and recording and plotting, so that scientists and techs could make sure it looked ok.  Now more and more of our systems take advantage of nagios and other monitoring, so a software engineer gets an email or text message when a nagios check fails.  I believe that's been a big advancement, and like hardware diagnostics, it requires knowing what checks are the most useful to implement.  And once you've coded up the detection of a problem, you can use it all the time, everywhere it makes sense.  Data checks can be valuable both in real-time and after the project.  A threshold test is useful in real-time to detect a problem as it happens, and it is also useful on the final dataset to identify the exact time periods of questionable data.
 
-Modularize and encapsulate processes.  The same rules that apply to
-breaking down source code apply to processes, so that it is easy to
-identify dependencies.  The less coupling between processes, the less
-likely that dependencies will break.
+Modularize and encapsulate processes.  The same rules that apply to breaking down source code apply to processes, so that it is easy to identify dependencies.  The less coupling between processes, the less likely that dependencies will break.
 
-This has a side benefit in that the more decoupled and encapsulated a
-process can be, the more easily it can be deployed to the cloud.  Nowadays
-one of the most important facilities in the field is Internet access, no
-matter where we deploy.  The faster that Internet access gets, the more we
-can consider deploying field services to the cloud.  Even the aircraft have
-Internet connections, and field operations depend on that, and those
-connections naturally continue to get faster.
+This has a side benefit in that the more decoupled and encapsulated a process can be, the more easily it can be deployed to the cloud.  Nowadays one of the most important facilities in the field is Internet access, no matter where we deploy.  The faster that Internet access gets, the more we can consider deploying field services to the cloud.  Even the aircraft have Internet connections, and field operations depend on that, and those connections naturally continue to get faster.
 
-Tools like docker and vagrant are obviously ideal options to help with
-process isolation, but it's not yet something I've tried in a field
-deployment.
+Tools like docker and vagrant are obviously ideal options to help with process isolation, but it's not yet something I've tried in a field deployment.
 
 
 B. applying devops to data: data-ops
 
-"data ops" -- automating data processing and consolidating configuration as
-much as possible -- whatever transformations must happen to the data,
-whatever software must run and with whatever parameters, should all be
-automated.  Like a Makefile for data: identify the dependencies, the
-transformations (like Makefile rules), the output formats and metadata (the
-targets).  Then "run the build" and "run the tests" specified in the data
-Makefile.  If the processing chain, software, configuration, or inputs
-change in any of the dependencies, then the affected targets get
-regenerated.  Unlike for software builds, data builds should include
-documentation in the metadata for how the results are generated, when, and
-reasons for changes to the processing.  All of that can generated more
-easily if the "build configuration" is consolidated into a "data ops" build
-system.
+"data ops" -- automating data processing and consolidating configuration as much as possible -- whatever transformations must happen to the data, whatever software must run and with whatever parameters, should all be automated.  Like a Makefile for data: identify the dependencies, the transformations (like Makefile rules), the output formats and metadata (the targets).  Then "run the build" and "run the tests" specified in the data Makefile.  If the processing chain, software, configuration, or inputs change in any of the dependencies, then the affected targets get regenerated.  Unlike for software builds, data builds should include documentation in the metadata for how the results are generated, when, and reasons for changes to the processing.  All of that can generated more easily if the "build configuration" is consolidated into a "data ops" build system.
 
-So back to the pie-in-the-sky scenario of producing best-quality data in
-real-time during a field project: what if the framework I was talking about
-was just such a data build system.  At the beginning of the project we setup
-all the known calibrations, corrections, and processing rules, then we just
-keep running the build engine through the entire project.  As instruments go
-out, or metadata change, or if calibrations change, those get modified in
-the build configuration and all the dependencies get updated.  If something
-changes which affects the output since the beginning of the project, then
-all of that output up to now gets regenerated.  For the duration of the
-project, scientists, developers, PIs, technicians can be looking at what the
-published data would like if it were released right then.  Maybe some of the
-build artifacts are quality control flags to help identify periods which
-need to be analyzed manually.
+Example use cases:
 
-Manual, careful, and subjective analysis will always be required, but
-whatever edits are justified must be encoded in the automated processing
-chain so they can be repeated automatically and objectively and so the exact
-edits can be documented.  For example, radar editing can be rather
-subjective and manually intensive, but the edits should be recorded as a
-difference to the raw data which can be applied in an automated processing
-chain.  Likewise for blank-out periods.  Instead of manually creating a
-dataset where periods of bad data are replaced with missing values, the
-blank-out period itself should be part of the build configuration which can
-be applied to the data automatically, whenever there's a change to the
-dependencies.
+Data files from a field site get backfilled after an Internet outage, so all the plots which cover the time period of those data need to be regenerated.
 
-If any of the calculations of correction factors are objective, then they
-can be automated.  They can recomputed continuously throughout the project,
-against the data recorded so far, and used to regenerate the data targets
-which depend on them.  Once all the instruments are finally turned off and
-boxed up and on their way home, we'll have a dataset that is complete except
-for any manual analysis that may still be required.
+The traces in the web plots start to exceed the range limit, so the plot ranges are adjusted.  All the web plots which use that plot range need to be regenerated.
 
-Carrying this Makefile/software build system analogy a little further, it's
-like the raw data are source code.  Wouldn't it be cool if we could
-distribute the raw data and the "build system configuration" to anyone, so
-they could build their own best-quality datasets and tweak the configuration
-however they like?  Perhaps the distributed build system includes the source
-code for all the required data processing software along with the raw data,
-or maybe the build system can be designed to download only the raw data
-needed for the targets desired by the user.  This kind of data distribution
-gives lots of power and flexibility to the data consumers, but it also
-serves as important documentation of how a dataset was generated.  If we
-can't give a scientist all the pieces and parameters that were used to
-generate a dataset, then I think that impacts the credibility of the data,
-at least a little bit.  Sure we can document what we did and why, but how
-can anyone verify (including us) that the documentation matches up with a
-particular dataset.
+We discover during the project that the wind head is off a few degrees, so a calibration offset is added.  All the netcdf files and plots which include wind data need to be regenerated.
 
-Even with the documentation, that doesn't really allow anyone to build the
-same dataset we built.  It's like the difference between open source and
-proprietary software.  Propietary software can document what it does and how
-it works, but without the source you really have no way to confirm what it
-does in all situations, much less modify it and improve upon it.  I that's
-like most of the data EOL releases.  We're getting better about documenting
-what software and version was used for which datasets, and if requested we
-could probably re-generate datasets from the original raw data, but it would
-take a lot of manual work, and it's certainly not something we could easily
-train someone else to do.  Our goal should be the equivalent of open source,
-call it open data if you like.  We release the raw data and the exact source
-code and build system configuration required to produce the published data
-sets, so the sources can be inspected, modified, and even improved and then
-the data rebuilt.  Maybe others will even want to submit patches to our data
-processing.  Maybe we branch the data processing like we branch software.
 
-I have been trying to do something like this in a python data management
-framework written for the EOL Integrated Sounding System.  The ISS is a good
-testing ground for this because it contains dozens of disparate raw data
-streams which all feed into different derivations and processing software,
-and the outputs include artifacts like plots.
+
+So back to the pie-in-the-sky scenario of producing best-quality data in real-time during a field project: what if the framework I was talking about was just such a data build system.  At the beginning of the project we setup all the known calibrations, corrections, and processing rules, then we just keep running the build engine through the entire project.  As instruments go out, or metadata change, or if calibrations change, those get modified in the build configuration and all the dependencies get updated.  If something changes which affects the output since the beginning of the project, then all of that output up to now gets regenerated.  For the duration of the project, scientists, developers, PIs, technicians can be looking at what the published data would like if it were released right then.  Maybe some of the build artifacts are quality control flags to help identify periods which need to be analyzed manually.
+
+Manual, careful, and subjective analysis will always be required, but whatever edits are justified must be encoded in the automated processing chain so they can be repeated automatically and objectively and so the exact edits can be documented.  For example, radar editing can be rather subjective and manually intensive, but the edits should be recorded as a difference to the raw data which can be applied in an automated processing chain.  Likewise for blank-out periods.  Instead of manually creating a dataset where periods of bad data are replaced with missing values, the blank-out period itself should be part of the build configuration which can be applied to the data automatically, whenever there's a change to the dependencies.
+
+If any of the calculations of correction factors are objective, then they can be automated.  They can recomputed continuously throughout the project, against the data recorded so far, and used to regenerate the data targets which depend on them.  Once all the instruments are finally turned off and boxed up and on their way home, we'll have a dataset that is complete except for any manual analysis that may still be required.
+
+Carrying this Makefile/software build system analogy a little further, it's like the raw data are source code.  Wouldn't it be cool if we could distribute the raw data and the "build system configuration" to anyone, so they could build their own best-quality datasets and tweak the configuration however they like?  Perhaps the distributed build system includes the source code for all the required data processing software along with the raw data, or maybe the build system can be designed to download only the raw data needed for the targets desired by the user.  This kind of data distribution gives lots of power and flexibility to the data consumers, but it also serves as important documentation of how a dataset was generated.  If we can't give a scientist all the pieces and parameters that were used to generate a dataset, then I think that impacts the credibility of the data, at least a little bit.  Sure we can document what we did and why, but how can anyone verify (including us) that the documentation matches up with a particular dataset.
+
+Even with the documentation, that doesn't really allow anyone to build the same dataset we built.  It's like the difference between open source and proprietary software.  Propietary software can document what it does and how it works, but without the source you really have no way to confirm what it does in all situations, much less modify it and improve upon it.  I that's like most of the data EOL releases.  We're getting better about documenting what software and version was used for which datasets, and if requested we could probably re-generate datasets from the original raw data, but it would take a lot of manual work, and it's certainly not something we could easily train someone else to do.  Our goal should be the equivalent of open source, call it open data if you like.  We release the raw data and the exact source code and build system configuration required to produce the published data sets, so the sources can be inspected, modified, and even improved and then the data rebuilt.  Maybe others will even want to submit patches to our data processing.  Maybe we branch the data processing like we branch software.
+
+I have been trying to do something like this in a python data management framework written for the EOL Integrated Sounding System.  The ISS is a good testing ground for this because it contains dozens of disparate raw data streams which all feed into different derivations and processing software, and the outputs include artifacts like plots.
 
 
 
@@ -570,56 +277,20 @@ V. What has to change:
 
  - users' expectations have to change too
 
- - infrastructure: distributed version control, issue tracking in the
-   field, software deployment and updates in the field (RPM versus git
-   updates and rebuilds/re-installs), software and system testing in the
-   field, diagnostics
+ - infrastructure: distributed version control, issue tracking in the field, software deployment and updates in the field (RPM versus git updates and rebuilds/re-installs), software and system testing in the field, diagnostics
 
- - deployment options: continuous integration systems continuously
-   generating packages and updating repositories, versus update and install
-   on the field system
+ - deployment options: continuous integration systems continuously generating packages and updating repositories, versus update and install on the field system
 
 
 VI. Conclusion
 
-This idea of technical debt has been a useful perspective to me, though I
-admit I may not have a completely accurate understanding of it.  I encourage
-you to learn more about it from a more reliable source and add it to your
-arsenal of software development practices.
+This idea of technical debt has been a useful perspective to me, though I admit I may not have a completely accurate understanding of it.  I encourage you to learn more about it from a more reliable source and add it to your arsenal of software development practices.
 
-And maybe, just maybe, this is a useful concept to introduce to our
-stakeholders and managers.  When we as developers are faced with taking on
-technical debt, probably we aren't the only ones who are affected by that
-decision, so probably there are some decisions we shouldn't make alone.
-Frankly, in EOL I think we can correlate technical debt with stress and
-morale debt.  When technical debt comes due, it's never at a good time, and
-it never comes without adding some stress.
+And maybe, just maybe, this is a useful concept to introduce to our stakeholders and managers.  When we as developers are faced with taking on technical debt, probably we aren't the only ones who are affected by that decision, so probably there are some decisions we shouldn't make alone.  Frankly, in EOL I think we can correlate technical debt with stress and morale debt.  When technical debt comes due, it's never at a good time, and it never comes without adding some stress.
 
-Also, reducing technical debt with discipline and dev-ops is ultimately not
-about tying the hands of developers in the field and trying to inhibit the
-fun and excitement that comes with in-field development, it's about making
-in-field development safer and even more fun.  I enjoy my coding much more
-when I can work on source code and not on manually running tests and
-deploying software updates.
+Also, reducing technical debt with discipline and dev-ops is ultimately not about tying the hands of developers in the field and trying to inhibit the fun and excitement that comes with in-field development, it's about making in-field development safer and even more fun.  I enjoy my coding much more when I can work on source code and not on manually running tests and deploying software updates.
 
-Back to the story of my epic failure during TOGA-COARE.  One way to look at
-it was that I took on technical debt by making a software change in the
-field.  I knew that sometime down the road I would need to evaluate the
-problem more closely and make a more proper fix, but I wanted a fix right
-then.  I knew there was some risk, because I remember I actually saved a
-copy of the binary in the bin directory, probably with a .bak extension or
-an extension of .pre-garys-datastore-change-1993, so obviously I knew I was
-taking a chance, and I was expecting someone else to have to discover any
-bugs and restore the backup if there was a problem.  And isn't that the
-worst kind of debt? the debt we accept but which someone else will have to
-pay later?  In TOGA-COARE, I ended up travelling New Zealand with a bike and
-a woman from Australia when the debt came due, and my fellow programmer
-Michelle had to pay the debt.  When I finally called her a week later
-because I had a sinking feeling that maybe something hadn't gone quite
-right, she confirmed my fears.  Wherever Michelle is right now, I hope she
-forgave me for that.  And for all the other programmers who have had to pay
-off debt that I've taken on, especially during field projects, I hope they
-can forgive me too.
+Back to the story of my epic failure during TOGA-COARE.  One way to look at it was that I took on technical debt by making a software change in the field.  I knew that sometime down the road I would need to evaluate the problem more closely and make a more proper fix, but I wanted a fix right then.  I knew there was some risk, because I remember I actually saved a copy of the binary in the bin directory, probably with a .bak extension or an extension of .pre-garys-datastore-change-1993, so obviously I knew I was taking a chance, and I was expecting someone else to have to discover any bugs and restore the backup if there was a problem.  And isn't that the worst kind of debt? the debt we accept but which someone else will have to pay later?  In TOGA-COARE, I ended up travelling New Zealand with a bike and a woman from Australia when the debt came due, and my fellow programmer Michelle had to pay the debt.  When I finally called her a week later because I had a sinking feeling that maybe something hadn't gone quite right, she confirmed my fears.  Wherever Michelle is right now, I hope she forgave me for that.  And for all the other programmers who have had to pay off debt that I've taken on, especially during field projects, I hope they can forgive me too.
 
 
 
